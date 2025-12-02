@@ -28,7 +28,7 @@
     "test:smoke-task": "node dist/tests/get-task.smoke.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.4",
+    "@modelcontextprotocol/sdk": "^1.24.0",
     "gray-matter": "^4.0.3",
     "yaml": "^2.4.1",
     "zod": "^3.24.2"
