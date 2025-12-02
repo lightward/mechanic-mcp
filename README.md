@@ -1,62 +1,61 @@
 # mechanic-mcp
 
-Mechanic MCP server that indexes the task library and generated docs, ships with an offline search index, and exposes MCP resources/tools over stdio.
+Mechanic MCP server for the task library and docs. Offline by default (bundled data), serving public URLs for tasks (`https://tasks.mechanic.dev/{handle}`) and docs (`https://learn.mechanic.dev/{path}`).
 
-## What it does
-- Builds a combined index of `mechanic-tasks/tasks/*.json` and `docs/**` (markdown) and packages it as `dist/data/index.json.gz` with a manifest.
-- MCP server over stdio:
-  - Resources for every task/doc (`mechanic-task://{id}`, `mechanic-docs://{id}`).
-  - Tools: `search_tasks` (scope=tasks/docs/all, fuzzy/pagination) and `refresh_index` (rebuild + re-register resources).
-- Offline by default; no network fetch needed for search/resources.
+## User guide
+- Requirements: Node.js 18+, MCP-capable client (Cursor, Claude Desktop, Codex, Gemini CLI, etc.).
+- What you can ask: find tasks; fetch task code (subscriptions + script/JS blocks); find docs; suggest similar tasks; get doc content.
+- Setup (use `npx mechanic-mcp@latest`):
+  - Cursor:
+    ```json
+    {
+      "mcpServers": {
+        "mechanic-mcp": {
+          "command": "npx",
+          "args": ["-y", "mechanic-mcp@latest"]
+        }
+      }
+    }
+    ```
+  - Claude Desktop:
+    ```json
+    {
+      "mcpServers": {
+        "mechanic-mcp": {
+          "command": "npx",
+          "args": ["-y", "mechanic-mcp@latest"]
+        }
+      }
+    }
+    ```
+  - Codex (`~/.codex/config.toml`):
+    ```toml
+    [mcp_servers.mechanic-mcp]
+    command = "npx"
+    args = ["-y", "mechanic-mcp@latest"]
+    ```
+  - Gemini CLI: same JSON as Cursor/Claude.
+- Tools:
+  - `search_tasks`: returns public URL, tags, subscriptions/subscriptions_template, options.
+  - `search_docs`: returns public URL/sourceUrl.
+  - `get_task` (tasks only): script + subscriptions + options + JS blocks; not full JSON.
+  - `get_doc` (docs only): full markdown.
+  - `similar_tasks`: related tasks by tags/subscriptions/title.
+  - `refresh_index`: rebuild (not needed for packaged data).
+- Usage notes: cite public URLs (no local paths/.md); prefer GraphQL in code; when sharing code, return subscriptions + script/JS (relevant bits), not full JSON.
 
-## Getting started
-```bash
-npm install
-npm run build:data   # (for maintainers) rebuilds dist/data/index.json.gz + records.json.gz + manifest.json from source repos
-npm run build        # compile TS to dist
-node dist/index.js   # runs MCP server on stdio
-```
+## For maintainers
+- Bundled data: `dist/data/index.json.gz`, `records.json.gz`, `manifest.json` (users don’t need source repos).
+- Regenerate (if needed):
+  ```bash
+  MECHANIC_DOCS_PATH=/path/to/mechanic-docs MECHANIC_TASKS_PATH=/path/to/mechanic-tasks npm run build:data
+  npm run build
+  ```
+- Tests: `npm run test:smoke`, `npm run test:smoke-doc`, `npm run test:smoke-task`.
+- Publish: bump version, `npm publish`.
 
-Packaged data
-- The published package includes `dist/data/index.json.gz`, `records.json.gz`, and `manifest.json` so you can run without local repos. `build:data` is only needed if you’re regenerating data from `mechanic-docs`/`mechanic-tasks`.
+## Env (optional)
+- `MECHANIC_DATA_PATH` (default `dist/data`), `MECHANIC_DOCS_PATH`, `MECHANIC_TASKS_PATH`, repo URLs/branches, sync interval.
 
-## Commands / tools
-- `search_tasks` input (zod validated):
-  - `query` (string, required)
-  - `limit` (1-50, default 10), `offset` (>=0)
-  - `fuzzy` (bool, default true), `fuzzyMaxEdits` (0-2), `fuzzyMaxCandidates` (1-5)
-  - `tags[]` (optional), `subscriptions[]` (optional; substring match in subscriptions/template)
-- `search_tasks` output:
-  - `items[]`: `{id, kind, title, path, url, snippet, tags, subscriptions, options, score}`
-  - `nextOffset` when more results remain
-- `search_docs` input/output: same shape as `search_tasks` but scoped to docs and `url` points to `https://learn.mechanic.dev/{path}`
-- `refresh_index`: no input; rebuilds from local sources and re-registers resources.
-- `get_task`: input `{id}` (or handle); output full task payload (name/tags/subscriptions/options/script/JS blocks, public URL) for import/editing.
-- `similar_tasks`: input `{handle, limit}`; output nearby tasks by overlapping tags/subscriptions/title with public URLs.
-- `get_doc`: input `{id}` (or path); output doc title/path/url/content.
-
-Resources
-- Docs are exposed as resources (URI percent-encoded); use `list_resources` + `read_resource` to fetch full markdown. Tasks are tools-only.
-
-## Resources
-- `mechanic-task://task:{handle}` → JSON task payload (from task export)
-- `mechanic-docs://doc:{relativePath}` → markdown content
-
-## Configuration (env)
-- `MECHANIC_DOCS_PATH` (default `../mechanic-docs`) — primary documentation set
-- `MECHANIC_TASKS_PATH` (default `../mechanic-tasks`)
-- `MECHANIC_DOCS_REPO_URL`, `MECHANIC_TASKS_REPO_URL` (optional; for git sync)
-- `MECHANIC_DOCS_BRANCH`, `MECHANIC_TASKS_BRANCH` (default `main`)
-- `MECHANIC_SYNC_MINUTES` (default `30`)
-- `MECHANIC_INDEX_MAX_DOCS` (default `20000`)
-- `MECHANIC_DATA_PATH` (default `dist/data`) — where the prebuilt index/manifest live
-
-## Runtime behavior
-- On startup, loads prebuilt index from `MECHANIC_DATA_PATH`; rebuild only if you run `npm run build:data`.
-- Logs manifest if present, and counts of docs/tasks.
-- `refresh_index` triggers a rebuild and re-registers resources in-process.
-
-## Notes
-- Transport is stdio-only for now.
-- Search is TF-IDF with fuzzy (edit distance up to 2) and pagination.
-- Everything runs locally; no network calls for search/resources.
+## Runtime
+- Loads bundled index/records from `MECHANIC_DATA_PATH`; `refresh_index` rebuilds if you opt in. Stdio transport; TF-IDF search with fuzzy + pagination; no network calls for search/resources.
