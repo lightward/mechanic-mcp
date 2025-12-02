@@ -43,17 +43,11 @@ export async function startMcpServer(options: McpServerOptions): Promise<() => P
         'You are an assistant helping developers write and customize Mechanic tasks in Liquid.',
         'Use search_tasks for task library queries; use search_docs for Mechanic docs. Use get_task for tasks only, get_doc or resources/read for docs.',
         'Inputs: query (required); limit<=50; offset>=0; fuzzyMaxEdits<=2; fuzzyMaxCandidates<=5.',
-        'Resource URIs are percent-encoded; always read resources using the exact uri from list_mcp_resources.',
-        'Docs: list/read resources (docs only); tasks are tools-only.',
-        'Data is local/offline (no network fetch needed).',
-        'Always include the public task URL in answers: https://tasks.mechanic.dev/{handle} (not usemechanic.com).',
-        'Do not refer to local repo paths (mechanic-tasks/...); use public task links only.',
-        'Doc paths generally map to https://learn.mechanic.dev/{relative_path} (e.g., core/events/topics).',
-        'Do not cite .md filenames; use public doc URLs (learn.mechanic.dev/...).',
-        'Always search for and recommend existing library tasks first; only suggest building a new task if no close match exists.',
-        'Task JSON is for direct import into Mechanic (see https://learn.mechanic.dev/core/tasks/import-and-export#importing); when sharing code samples, show subscriptions and script (the relevant bits), not the whole JSON.',
-        'When naming tasks in text, omit local file names (e.g., say "Auto-tag orders using product tags" with link to https://tasks.mechanic.dev/auto-tag-orders-using-product-tags).',
-        'If asked for task code, return the subscriptions and script (and JS blocks if present), not the full JSON; include the public task URL.',
+        'Docs are resources; tasks are tools. Resource URIs are percent-encoded from list_resources.',
+        'Always use public URLs: tasks.mechanic.dev/{handle} for tasks, learn.mechanic.dev/{path} for docs. Never cite local repo paths or .md filenames.',
+        'Prefer Shopify GraphQL in code examples; REST is deprecated in Mechanic tasks.',
+        'Recommend existing library tasks first; build new only if no close match.',
+        'For task code, return subscriptions + script/JS (relevant bits), not full JSON; include the public task URL.',
       ].join('\n'),
     },
   );
@@ -84,6 +78,10 @@ export async function startMcpServer(options: McpServerOptions): Promise<() => P
         subscriptions: getStore()
           .records.filter((r) => r.id === hit.id && r.kind === 'task')
           .flatMap((r) => ('events' in r ? r.events : [])),
+        subscriptions_template: getStore()
+          .records.filter((r) => r.id === hit.id && r.kind === 'task')
+          .map((r) => ('subscriptions_template' in r ? (r as any).subscriptions_template : undefined))
+          .find(Boolean),
         options: getStore()
           .records.filter((r) => r.id === hit.id && r.kind === 'task')
           .map((r) => ('options' in r ? r.options : undefined))
@@ -137,6 +135,7 @@ export async function startMcpServer(options: McpServerOptions): Promise<() => P
       const hitsWithUrl = hits.map((hit) => ({
         ...hit,
         url: `https://learn.mechanic.dev/${hit.path}`,
+        sourceUrl: `https://learn.mechanic.dev/${hit.path}`,
       }));
 
       const nextOffset = hits.length === input.limit ? input.offset + input.limit : undefined;

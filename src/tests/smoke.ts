@@ -2,13 +2,14 @@ import { strict as assert } from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadConfig } from '../config.js';
-import { hydrateStore, loadPrebuiltIndex, searchStoreAdvanced } from '../core/engine.js';
+import { hydrateStore, loadPrebuiltIndex, loadBundledRecords, searchStoreAdvanced } from '../core/engine.js';
 import type { ResourceKind } from '../types.js';
 
 async function run() {
   const config = loadConfig();
   const prebuilt = loadPrebuiltIndex(config.dataDir);
-  const store = await hydrateStore(config, prebuilt);
+  const bundled = await loadBundledRecords(config.dataDir);
+  const store = await hydrateStore(config, prebuilt, bundled);
 
   const searchAndAssert = (query: string, kind?: ResourceKind) => {
     const hits = searchStoreAdvanced(store, {

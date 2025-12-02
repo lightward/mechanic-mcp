@@ -33,6 +33,7 @@ Packaged data
 - `refresh_index`: no input; rebuilds from local sources and re-registers resources.
 - `get_task`: input `{id}` (or handle); output full task payload (name/tags/subscriptions/options/script/JS blocks, public URL) for import/editing.
 - `similar_tasks`: input `{handle, limit}`; output nearby tasks by overlapping tags/subscriptions/title with public URLs.
+- `get_doc`: input `{id}` (or path); output doc title/path/url/content.
 
 Resources
 - Docs are exposed as resources (URI percent-encoded); use `list_resources` + `read_resource` to fetch full markdown. Tasks are tools-only.

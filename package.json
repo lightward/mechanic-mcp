@@ -4,6 +4,9 @@
   "description": "Mechanic MCP server for docs and task library search",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "mechanic-mcp": "dist/index.js"
+  },
   "files": [
     "dist/**/*.js",
     "dist/**/*.d.ts",
@@ -20,7 +23,9 @@
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "lint": "eslint . --ext .ts",
-    "test:smoke": "node dist/tests/smoke.js"
+    "test:smoke": "node dist/tests/smoke.js",
+    "test:smoke-doc": "node dist/tests/doc-resource.smoke.js",
+    "test:smoke-task": "node dist/tests/get-task.smoke.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",

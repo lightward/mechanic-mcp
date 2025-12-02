@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import path from 'node:path';
 import fs from 'node:fs';
 import { loadConfig } from './config.js';
@@ -6,6 +7,13 @@ import { syncRepo } from './core/git.js';
 import { startMcpServer } from './mcp/server.js';
 
 async function bootstrap() {
+  if (process.argv.includes('--help') || process.argv.includes('-h')) {
+    console.log('Usage: mechanic-mcp (runs MCP server on stdio)');
+    console.log('Environment: MECHANIC_DATA_PATH (defaults to dist/data with bundled index/records).');
+    console.log('Tools: search_tasks, search_docs, get_task, get_doc, similar_tasks, refresh_index.');
+    process.exit(0);
+  }
+
   const config = loadConfig();
 
   // Keep a mutable reference so refresh can swap it.
