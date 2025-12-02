@@ -1,10 +1,10 @@
 # mechanic-mcp
 
-Mechanic MCP server for the task library and docs. Offline by default (bundled data), serving public URLs for tasks (`https://tasks.mechanic.dev/{handle}`) and docs (`https://learn.mechanic.dev/{path}`).
+Mechanic MCP server for the task library and docs. Built for writing and customizing Mechanic tasks (Shopify automation app: https://apps.shopify.com/mechanic). Offline by default (bundled data), serving public URLs for tasks (https://tasks.mechanic.dev) and docs (https://learn.mechanic.dev).
 
 ## User guide
 - Requirements: Node.js 18+, MCP-capable client (Cursor, Claude Desktop, Codex, Gemini CLI, etc.).
-- What you can ask: find tasks; fetch task code (subscriptions + script/JS blocks); find docs; suggest similar tasks; get doc content.
+- What you can ask: find tasks; fetch task code (subscriptions + script/JS blocks); find docs; suggest similar tasks; get doc content; help writing or customizing Mechanic tasks.
 - Setup (use `npx mechanic-mcp@latest`):
   - Cursor:
     ```json
