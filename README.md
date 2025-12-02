@@ -5,14 +5,14 @@ Mechanic MCP server for the task library and docs. Built for writing and customi
 ## User guide
 - Requirements: Node.js 18+, MCP-capable client (Cursor, Claude Desktop, Codex, Gemini CLI, etc.).
 - What you can ask: find tasks; fetch task code (subscriptions + script/JS blocks); find docs; suggest similar tasks; get doc content; help writing or customizing Mechanic tasks.
-- Setup (use `npx mechanic-mcp@latest`):
+- Setup (use `npx @lightward/mechanic-mcp@latest`):
   - Cursor:
     ```json
     {
       "mcpServers": {
         "mechanic-mcp": {
           "command": "npx",
-          "args": ["-y", "mechanic-mcp@latest"]
+          "args": ["-y", "@lightward/mechanic-mcp@latest"]
         }
       }
     }
@@ -23,7 +23,7 @@ Mechanic MCP server for the task library and docs. Built for writing and customi
       "mcpServers": {
         "mechanic-mcp": {
           "command": "npx",
-          "args": ["-y", "mechanic-mcp@latest"]
+          "args": ["-y", "@lightward/mechanic-mcp@latest"]
         }
       }
     }
@@ -32,7 +32,7 @@ Mechanic MCP server for the task library and docs. Built for writing and customi
     ```toml
     [mcp_servers.mechanic-mcp]
     command = "npx"
-    args = ["-y", "mechanic-mcp@latest"]
+    args = ["-y", "@lightward/mechanic-mcp@latest"]
     ```
   - Gemini CLI: same JSON as Cursor/Claude.
 - Tools:
@@ -52,7 +52,7 @@ Mechanic MCP server for the task library and docs. Built for writing and customi
   npm run build
   ```
 - Tests: `npm run test:smoke`, `npm run test:smoke-doc`, `npm run test:smoke-task`.
-- Publish: bump version, `npm publish`.
+- Publish: bump version, `npm publish` (use `--access public` for scoped packages).
 
 ## Env (optional)
 - `MECHANIC_DATA_PATH` (default `dist/data`), `MECHANIC_DOCS_PATH`, `MECHANIC_TASKS_PATH`, repo URLs/branches, sync interval.
