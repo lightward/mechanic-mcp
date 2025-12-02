@@ -1,6 +1,6 @@
 {
   "name": "mechanic-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Mechanic MCP server for docs and task library search",
   "type": "module",
   "main": "dist/index.js",
