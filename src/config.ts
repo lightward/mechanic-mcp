@@ -7,6 +7,12 @@ export interface RepoConfig {
   localPath: string;
 }
 
+export interface ApiConfig {
+  baseUrl: string;
+  token?: string;
+  timeoutMs: number;
+}
+
 export interface ServerConfig {
   docs: RepoConfig;
   tasks: RepoConfig;
@@ -15,6 +21,7 @@ export interface ServerConfig {
     maxDocs: number;
   };
   dataDir: string;
+  api?: ApiConfig;
 }
 
 const env = process.env;
@@ -51,5 +58,10 @@ export function loadConfig(): ServerConfig {
       maxDocs: Number(env.MECHANIC_INDEX_MAX_DOCS || 20000),
     },
     dataDir: resolvePath(env.MECHANIC_DATA_PATH, path.resolve(projectRoot, 'dist', 'data')),
+    api: {
+      baseUrl: (env.MECHANIC_API_BASE || 'https://tools.mechanic.dev').replace(/\/$/, ''),
+      token: env.MECHANIC_TOOL_TOKEN || env.MECHANIC_API_TOKEN,
+      timeoutMs: Number(env.MECHANIC_API_TIMEOUT_MS || 8000),
+    },
   };
 }

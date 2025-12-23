@@ -6,11 +6,46 @@ import { hydrateStore, loadPrebuiltIndex, loadBundledRecords } from './core/engi
 import { syncRepo } from './core/git.js';
 import { startMcpServer } from './mcp/server.js';
 
+// Lightweight .env loader (avoids adding a dependency). Parses KEY=VALUE lines.
+function loadDotEnv() {
+  const envPath = path.resolve(process.cwd(), '.env');
+  if (!fs.existsSync(envPath)) return;
+
+  try {
+    const lines = fs.readFileSync(envPath, 'utf-8').split('\n');
+    lines.forEach((line) => {
+      let trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return;
+      if (trimmed.startsWith('export ')) trimmed = trimmed.slice('export '.length).trim();
+      const idx = trimmed.indexOf('=');
+      if (idx === -1) return;
+      const key = trimmed.slice(0, idx).trim();
+      let value = trimmed.slice(idx + 1).trim();
+      if (!value) return;
+
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      } else {
+        value = value.replace(/\s+#.*$/, '').trimEnd();
+      }
+
+      if (key && process.env[key] === undefined) {
+        process.env[key] = value;
+      }
+    });
+  } catch (error) {
+    console.error(`Warning: unable to read .env: ${error}`);
+  }
+}
+
 async function bootstrap() {
+  loadDotEnv();
+
   if (process.argv.includes('--help') || process.argv.includes('-h')) {
     console.log('Usage: mechanic-mcp (runs MCP server on stdio)');
     console.log('Environment: MECHANIC_DATA_PATH (defaults to dist/data with bundled index/records).');
-    console.log('Tools: search_tasks, search_docs, get_task, get_doc, similar_tasks, refresh_index.');
+    console.log('Optional: MECHANIC_API_BASE (and MECHANIC_TOOL_TOKEN if required) to enable lint_task/preview_task.');
+    console.log('Tools: search_tasks, search_task_examples, search_docs, get_task, get_doc, similar_tasks, list_tasks, refresh_index, build_task_export, lint_task*, preview_task* (*requires API base + token).');
     process.exit(0);
   }
 
@@ -43,6 +78,7 @@ async function bootstrap() {
   const stop = await startMcpServer({
     getStore: () => store,
     refresh,
+    apiConfig: config.api,
   });
 
   // Log manifest info if present

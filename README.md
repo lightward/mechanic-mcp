@@ -37,10 +37,14 @@ Mechanic MCP server for the task library and docs. Built for writing and customi
   - Gemini CLI: same JSON as Cursor/Claude.
 - Tools:
   - `search_tasks`: returns public URL, tags, subscriptions/subscriptions_template, options.
+  - `search_task_examples`: returns script excerpts + match snippets for patterns.
   - `search_docs`: returns public URL/sourceUrl.
   - `get_task` (tasks only): script + subscriptions + options + JS blocks; not full JSON.
   - `get_doc` (docs only): full markdown.
   - `similar_tasks`: related tasks by tags/subscriptions/title.
+  - `list_tasks`: minimal metadata (title, tags, subscriptions, options) for library tasks.
+  - `build_task_export`: canonical task export from script/subscriptions/options for lint/preview/import.
+  - `lint_task` / `preview_task`: live lint/dry-run via the tool API (set `MECHANIC_API_BASE`, token optional).
   - `refresh_index`: rebuild (not needed for packaged data).
 - Usage notes: cite public URLs (no local paths/.md); prefer GraphQL in code; when sharing code, return subscriptions + script/JS (relevant bits), not full JSON.
 
@@ -56,6 +60,7 @@ Mechanic MCP server for the task library and docs. Built for writing and customi
 
 ## Env (optional)
 - `MECHANIC_DATA_PATH` (default `dist/data`), `MECHANIC_DOCS_PATH`, `MECHANIC_TASKS_PATH`, repo URLs/branches, sync interval.
+- `MECHANIC_API_BASE` (defaults to `https://tools.mechanic.dev`) to enable `lint_task`/`preview_task` (optional `MECHANIC_TOOL_TOKEN`, `MECHANIC_API_TIMEOUT_MS`, default 8000).
 
 ## Runtime
 - Loads bundled index/records from `MECHANIC_DATA_PATH`; `refresh_index` rebuilds if you opt in. Stdio transport; TF-IDF search with fuzzy + pagination; no network calls for search/resources.
