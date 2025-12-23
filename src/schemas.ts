@@ -253,7 +253,4 @@ export const buildTaskExportInputSchema = z.object({
   task: taskPayloadSchema,
 });
 
-export const buildTaskExportResponseSchema = z.object({
-  task: z.record(z.any()),
-  warnings: z.array(z.string()).optional(),
-});
+export const buildTaskExportResponseSchema = taskPayloadSchema;

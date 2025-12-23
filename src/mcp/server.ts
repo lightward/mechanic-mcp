@@ -719,13 +719,17 @@ export async function startMcpServer(options: McpServerOptions): Promise<() => P
         warnings.push('No subscriptions or preview events present; preview_task will fail.');
       }
 
-      const payload = buildTaskExportResponseSchema.parse({
-        task,
-        warnings: warnings.length > 0 ? warnings : undefined,
-      });
+      const payload = buildTaskExportResponseSchema.parse(task);
+      const content = [{ type: 'text', text: JSON.stringify(payload, null, 2) }];
+      if (warnings.length > 0) {
+        content.push({
+          type: 'text',
+          text: `Warnings: ${warnings.join(' ')}`,
+        });
+      }
 
       return {
-        content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }],
+        content,
         structuredContent: payload,
       };
     },
