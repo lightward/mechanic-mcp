@@ -1,6 +1,6 @@
 {
   "name": "@lightward/mechanic-mcp",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Mechanic MCP server for docs and task library search",
   "type": "module",
   "main": "dist/index.js",
