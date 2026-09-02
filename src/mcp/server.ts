@@ -17,7 +17,59 @@ import {
 } from '../schemas.js';
 import type { RecordItem, SearchHit } from '../types.js';
 import type { Resource } from '@modelcontextprotocol/sdk/types.js';
+import { ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { encodeUri, decodeUri } from '../util/uri.js';
+
+/**
+ * JSON Schema dialect the MCP spec (and strict clients such as Claude Desktop)
+ * require for tool schemas.
+ */
+const JSON_SCHEMA_2020_12 = 'https://json-schema.org/draft/2020-12/schema';
+
+/**
+ * Rewrites a draft-07 JSON Schema produced by the MCP SDK into 2020-12.
+ *
+ * The SDK (>=1.24.0) always serialises tool schemas with `target: 'draft-7'` --
+ * it never forwards a target to the Zod-to-JSON-Schema converter -- so schemas
+ * are emitted as draft-07 regardless of whether they were declared with Zod v3
+ * or v4. Claude Desktop rejects any tool whose outputSchema declares an
+ * unsupported dialect, silently dropping the tool. Upgrading Zod alone does not
+ * fix this; the dialect has to be corrected on the way out.
+ *
+ * The two structural differences that matter for the schemas used here:
+ *   - `definitions` was renamed to `$defs`
+ *   - `#/definitions/...` refs must be repointed at `#/$defs/...`
+ */
+function toJsonSchema2020(schema: unknown): unknown {
+  if (Array.isArray(schema)) {
+    return schema.map(toJsonSchema2020);
+  }
+  if (!schema || typeof schema !== 'object') {
+    return schema;
+  }
+
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(schema as Record<string, unknown>)) {
+    if (key === '$schema') {
+      continue; // re-added at the root below
+    }
+    if (key === 'definitions') {
+      out.$defs = toJsonSchema2020(value);
+      continue;
+    }
+    if (key === '$ref' && typeof value === 'string') {
+      out.$ref = value.replace(/^#\/definitions\//, '#/$defs/');
+      continue;
+    }
+    out[key] = toJsonSchema2020(value);
+  }
+  return out;
+}
+
+function withDialect2020(schema: unknown): unknown {
+  const converted = toJsonSchema2020(schema) as Record<string, unknown>;
+  return { $schema: JSON_SCHEMA_2020_12, ...converted };
+}
 
 export interface McpServerOptions {
   getStore: () => DataStore;
@@ -356,6 +408,45 @@ export async function startMcpServer(options: McpServerOptions): Promise<() => P
       return { content: [{ type: 'text', text: 'Refreshed index' }] };
     },
   );
+
+  // Correct the JSON Schema dialect of every tool schema on the way out.
+  //
+  // The SDK owns the tools/list handler, so we replace it with a wrapper that
+  // delegates to the original and rewrites the emitted schemas. Delegating
+  // (rather than rebuilding the list) keeps tool discovery -- enabled flags,
+  // titles, annotations, pagination -- entirely in the SDK's hands.
+  //
+  // Reaching for the registered handler is the only way to delegate: the SDK
+  // exposes no public accessor. If a future SDK stops registering it under this
+  // key, we log and leave the SDK's own handler in place; tools would then
+  // advertise draft-07 again (the pre-fix behaviour) rather than the server
+  // failing to start. test:smoke-dialect catches that on any SDK bump.
+  const sdkListTools = (
+    mcp.server as unknown as {
+      _requestHandlers?: Map<string, (request: unknown, extra: unknown) => Promise<unknown>>;
+    }
+  )._requestHandlers?.get('tools/list');
+
+  if (!sdkListTools) {
+    console.error(
+      'WARNING: could not wrap the MCP SDK tools/list handler; tool schemas will ' +
+        'be advertised as draft-07 and strict clients may reject them.',
+    );
+  } else {
+    mcp.server.setRequestHandler(ListToolsRequestSchema, async (request, extra) => {
+      const result = (await sdkListTools(request, extra)) as {
+        tools: Array<Record<string, unknown>>;
+      };
+      return {
+        ...result,
+        tools: result.tools.map((tool) => ({
+          ...tool,
+          ...(tool.inputSchema ? { inputSchema: withDialect2020(tool.inputSchema) } : {}),
+          ...(tool.outputSchema ? { outputSchema: withDialect2020(tool.outputSchema) } : {}),
+        })),
+      };
+    });
+  }
 
   const transport = new StdioServerTransport();
   await mcp.connect(transport);
