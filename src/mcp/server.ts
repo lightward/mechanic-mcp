@@ -168,7 +168,7 @@ export async function startMcpServer(options: McpServerOptions): Promise<() => P
   mcp.registerTool(
     'search_docs',
     {
-      description: 'Search Mechanic docs (generated task documentation)',
+      description: 'Search the Mechanic documentation for tasks, Forms, Functions, and the platform',
       inputSchema: searchInputSchema.omit({ scope: true }),
       outputSchema: searchResponseSchema,
     },
@@ -186,8 +186,8 @@ export async function startMcpServer(options: McpServerOptions): Promise<() => P
       });
       const hitsWithUrl = hits.map((hit) => ({
         ...hit,
-        url: `https://learn.mechanic.dev/${hit.path}`,
-        sourceUrl: `https://learn.mechanic.dev/${hit.path}`,
+        url: hit.path,
+        sourceUrl: hit.path,
       }));
 
       const nextOffset = hits.length === input.limit ? input.offset + input.limit : undefined;

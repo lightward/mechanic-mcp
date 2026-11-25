@@ -59,16 +59,19 @@ export async function loadDocs(root: string): Promise<DocRecord[]> {
       const title = (parsed.data.title as string | undefined) || heading || path.basename(filePath, path.extname(filePath));
       const urlPath = relPath.replace(/\\/g, '/');
 
+      const route = urlPath.replace(/(^|\/)README\.mdx?$/i, '').replace(/\.mdx?$/i, '');
+      const publicUrl = new URL(route, 'https://learn.mechanic.dev/').href;
+
       const record: DocRecord = {
         id: `doc:${relPath}`,
         kind: 'doc',
         title,
-        path: `https://learn.mechanic.dev/${urlPath}`,
+        path: publicUrl,
         section: relPath.split(path.sep)[0],
         tags: toTags(parsed.data.tags),
         headings: extractHeadings(parsed.content),
         content: parsed.content,
-        sourceUrl: `https://learn.mechanic.dev/${urlPath}`,
+        sourceUrl: publicUrl,
       };
 
       return record;

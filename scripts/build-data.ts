@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { loadConfig } from '../src/config';
@@ -10,10 +11,22 @@ async function ensureDir(dirPath: string) {
   await fs.mkdir(dirPath, { recursive: true });
 }
 
+function revision(directory: string): string | undefined {
+  try {
+    return execFileSync('git', ['-C', directory, 'rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    return undefined;
+  }
+}
+
 async function main() {
   const config = loadConfig();
   const docs = await loadDocs(config.docs.localPath);
   const tasks = await loadTasks(config.tasks.localPath);
+
+  if (!docs.length || !tasks.length) {
+    throw new Error('Both the documentation and task library are required to build the bundled index.');
+  }
 
   const combinedIndex = buildIndex([...docs, ...tasks]);
 
@@ -40,8 +53,8 @@ async function main() {
       total: docs.length + tasks.length,
     },
     sources: {
-      docsPath: config.docs.localPath,
-      tasksPath: config.tasks.localPath,
+      docs: { repository: 'lightward/mechanic-docs', revision: revision(config.docs.localPath) },
+      tasks: { repository: 'lightward/mechanic-tasks', revision: revision(config.tasks.localPath) },
     },
   };
 
